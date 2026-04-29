@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JKT48 Ticket Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0d0d0d;
+    --bg2:      #141414;
+    --bg3:      #1a1a1a;
+    --border:   #2a2a2a;
+    --text:     #e8e8e8;
+    --muted:    #666;
+    --accent:   #e8c97e;
+    --green:    #4caf78;
+    --red:      #e05a5a;
+    --yellow:   #e8c040;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+  }
+
+  .logo span { color: var(--muted); font-weight: 400; }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: none;
+  }
+
+  .dot.active {
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ── LAYOUT ── */
+  main { padding: 28px; max-width: 1100px; margin: 0 auto; }
+
+  /* ── STAT CARDS ── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+
+  .stat {
+    background: var(--bg2);
+    padding: 20px 22px;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.green  { color: var(--green); }
+  .stat-value.red    { color: var(--red); }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 5px;
+    font-family: var(--mono);
+  }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── GRID 2 COL ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── INFO BOX ── */
+  .info-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 18px 20px;
+  }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .info-row:last-child { border-bottom: none; }
+
+  .info-key {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .info-val {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  /* ── MEMBER TABLE ── */
+  .table-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    margin-bottom: 28px;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 11px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+    border-radius: 2px;
+  }
+
+  .badge.available { background: rgba(76, 175, 120, 0.15); color: var(--green); }
+  .badge.low       { background: rgba(232, 192, 64, 0.15);  color: var(--yellow); }
+  .badge.sold_out  { background: rgba(224, 90, 90, 0.15);   color: var(--red); }
+
+  /* ── LOG ── */
+  .log-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  .log-item {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  .log-item:last-child { border-bottom: none; }
+
+  .log-time { color: var(--muted); }
+
+  .log-info { color: var(--text); }
+  .log-info .member { color: var(--accent); }
+  .log-info .sesi   { color: var(--muted); font-size: 10px; }
+
+  .log-delta {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .log-delta.berkurang { color: var(--red); }
+  .log-delta.restock   { color: var(--green); }
+
+  .empty {
+    padding: 32px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── SEARCH BAR ── */
+  .search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .search-box {
+    position: relative;
+    flex: 1;
+  }
+
+  .search-box input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 9px 36px 9px 14px;
+    outline: none;
+    transition: border-color 0.15s;
+    letter-spacing: 0.03em;
+  }
+
+  .search-box input:focus {
+    border-color: var(--accent);
+  }
+
+  .search-box input::placeholder {
+    color: var(--muted);
+  }
+
+  .search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 13px;
+    pointer-events: none;
+  }
+
+  .search-clear {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 9px 14px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+    display: none;
+  }
+
+  .search-clear:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .search-count {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .search-count span { color: var(--accent); }
+
+  mark {
+    background: rgba(232, 201, 126, 0.25);
+    color: var(--accent);
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  /* ── LAST UPDATED ── */
+  .footer {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-align: center;
+    padding: 20px;
+    letter-spacing: 0.06em;
+  }
+
+  #last-updated { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">JKT48 <span>/ ticket monitor</span></div>
+  <div class="status-pill">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-text">CONNECTING</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- STAT CARDS -->
+  <div class="stats" id="stats">
+    <div class="stat">
+      <div class="stat-label">Total Cek</div>
+      <div class="stat-value accent" id="stat-run">—</div>
+      <div class="stat-sub" id="stat-interval">interval —s</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Slot Tersedia</div>
+      <div class="stat-value green" id="stat-avail">—</div>
+      <div class="stat-sub" id="stat-total">dari — slot</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Notif Terkirim</div>
+      <div class="stat-value" id="stat-notif">—</div>
+      <div class="stat-sub" id="stat-fail">gagal fetch: —</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Uptime</div>
+      <div class="stat-value" id="stat-uptime" style="font-size:16px">—</div>
+      <div class="stat-sub" id="stat-since">sejak —</div>
+    </div>
+  </div>
+
+  <!-- INFO & HEARTBEAT -->
+  <div class="two-col">
+    <div>
+      <div class="section-title">Info Monitor</div>
+      <div class="info-box">
+        <div class="info-row">
+          <span class="info-key">Last Check</span>
+          <span class="info-val" id="info-check">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Last Heartbeat</span>
+          <span class="info-val" id="info-hb">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">API Endpoint</span>
+          <span class="info-val" style="font-size:10px;color:var(--muted)">EXE588</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Watch Members</span>
+          <span class="info-val" id="info-watch">semua</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Ringkasan Quota</div>
+      <div class="info-box" id="quota-summary">
+        <div class="empty">Memuat data...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEMBER TABLE -->
+  <div class="section-title">Status Quota Tiket</div>
+
+  <!-- SEARCH BAR -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <input type="text" id="member-search" placeholder="Cari nama member..." autocomplete="off" spellcheck="false">
+      <span class="search-icon">⌕</span>
+    </div>
+    <button class="search-clear" id="search-clear" onclick="clearSearch()">✕ Hapus</button>
+    <div class="search-count" id="search-count" style="display:none">
+      <span id="count-match">0</span> / <span id="count-total">0</span> member
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-bottom:28px">
+    <table>
+      <thead>
+        <tr>
+          <th>Member</th>
+          <th>Sesi</th>
+          <th>Jalur</th>
+          <th>Quota</th>
+          <th>Harga</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="member-tbody">
+        <tr><td colspan="6" class="empty">Memuat data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CHANGE LOG -->
+  <div class="section-title">Log Perubahan Quota</div>
+
+  <!-- LOG SEARCH -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <input type="text" id="log-search" placeholder="Filter log berdasarkan nama member..." autocomplete="off" spellcheck="false">
+      <span class="search-icon">⌕</span>
+    </div>
+    <button class="search-clear" id="log-clear" onclick="clearLogSearch()">✕ Hapus</button>
+    <div class="search-count" id="log-count" style="display:none">
+      <span id="log-count-match">0</span> / <span id="log-count-total">0</span> entri
+    </div>
+  </div>
+
+  <div class="log-wrap" id="log-wrap">
+    <div class="empty">Belum ada perubahan...</div>
+  </div>
+
+</main>
+
+<div class="footer">
+  Auto-refresh setiap 15 detik &nbsp;|&nbsp; Last updated: <span id="last-updated">—</span>
+</div>
+
+<script>
+  const fmt = n => n.toLocaleString("id-ID");
+
+  let allMembers = [];
+  let allLogs    = [];
+
+  // ── HIGHLIGHT helper ──
+  function highlight(text, query) {
+    if (!query) return text;
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>');
+  }
+
+  // ── RENDER MEMBER TABLE ──
+  function renderMembers(query = "") {
+    const q      = query.trim().toLowerCase();
+    const tbody  = document.getElementById("member-tbody");
+    const filtered = q ? allMembers.filter(m => m.name.toLowerCase().includes(q)) : allMembers;
+
+    // Update count
+    const countEl = document.getElementById("search-count");
+    if (q) {
+      countEl.style.display = "block";
+      document.getElementById("count-match").textContent = filtered.length;
+      document.getElementById("count-total").textContent = allMembers.length;
+    } else {
+      countEl.style.display = "none";
+    }
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="empty">Tidak ada member "${query}"</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(m => `
+      <tr>
+        <td>${highlight(m.name, query)}</td>
+        <td>${m.sesi}</td>
+        <td>${m.jalur}</td>
+        <td>${m.quota}</td>
+        <td>Rp${fmt(m.price)}</td>
+        <td><span class="badge ${m.status}">${
+          m.status === "available" ? "TERSEDIA" :
+          m.status === "low"       ? "HAMPIR HABIS" : "SOLD OUT"
+        }</span></td>
+      </tr>
+    `).join("");
+  }
+
+  // ── RENDER LOG ──
+  function renderLog(query = "") {
+    const q        = query.trim().toLowerCase();
+    const wrap     = document.getElementById("log-wrap");
+    const filtered = q ? allLogs.filter(l => l.name.toLowerCase().includes(q)) : allLogs;
+
+    const countEl = document.getElementById("log-count");
+    if (q) {
+      countEl.style.display = "block";
+      document.getElementById("log-count-match").textContent = filtered.length;
+      document.getElementById("log-count-total").textContent = allLogs.length;
+    } else {
+      countEl.style.display = "none";
+    }
+
+    if (filtered.length === 0) {
+      wrap.innerHTML = q
+        ? `<div class="empty">Tidak ada log untuk "${query}"</div>`
+        : `<div class="empty">Belum ada perubahan...</div>`;
+      return;
+    }
+
+    wrap.innerHTML = filtered.map(l => `
+      <div class="log-item">
+        <div class="log-time">${l.date}<br>${l.time}</div>
+        <div class="log-info">
+          <div class="member">${highlight(l.name, query)}</div>
+          <div class="sesi">${l.sesi} · ${l.jalur}</div>
+        </div>
+        <div class="log-delta ${l.type}">
+          ${l.type === "berkurang"
+            ? `−${l.selisih} (${l.before}→${l.after})`
+            : `+${l.selisih} restock`
+          }
+        </div>
+      </div>
+    `).join("");
+  }
+
+  // ── CLEAR SEARCH ──
+  function clearSearch() {
+    const inp = document.getElementById("member-search");
+    inp.value = "";
+    inp.dispatchEvent(new Event("input"));
+    inp.focus();
+  }
+
+  function clearLogSearch() {
+    const inp = document.getElementById("log-search");
+    inp.value = "";
+    inp.dispatchEvent(new Event("input"));
+    inp.focus();
+  }
+
+  // ── SEARCH EVENT LISTENERS ──
+  document.getElementById("member-search").addEventListener("input", e => {
+    const q = e.target.value;
+    document.getElementById("search-clear").style.display = q ? "block" : "none";
+    renderMembers(q);
+  });
+
+  document.getElementById("log-search").addEventListener("input", e => {
+    const q = e.target.value;
+    document.getElementById("log-clear").style.display = q ? "block" : "none";
+    renderLog(q);
+  });
+
+  // ── FETCH STATUS ──
+  async function loadStatus() {
+    try {
+      const res = await fetch("/api/status");
+      const d   = await res.json();
+
+      const dot  = document.getElementById("status-dot");
+      const stxt = document.getElementById("status-text");
+      dot.classList.toggle("active", d.running);
+      stxt.textContent = d.running ? "ACTIVE" : "STOPPED";
+
+      document.getElementById("stat-run").textContent      = fmt(d.run_count);
+      document.getElementById("stat-interval").textContent = `interval ${d.interval}s`;
+      document.getElementById("stat-avail").textContent    = d.avail_slots;
+      document.getElementById("stat-total").textContent    = `dari ${d.total_slots} slot`;
+      document.getElementById("stat-notif").textContent    = fmt(d.notif_total);
+      document.getElementById("stat-fail").textContent     = `gagal fetch: ${d.fail_total}`;
+      document.getElementById("stat-uptime").textContent   = d.uptime;
+      document.getElementById("info-check").textContent    = d.last_check;
+      document.getElementById("info-hb").textContent       = d.last_hb;
+
+      const avail   = d.avail_slots;
+      const soldout = d.total_slots - avail;
+      const low     = d.members.filter(m => m.status === "low").length;
+      document.getElementById("quota-summary").innerHTML = `
+        <div class="info-row">
+          <span class="info-key">Tersedia</span>
+          <span class="info-val" style="color:var(--green)">${avail}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Hampir Habis</span>
+          <span class="info-val" style="color:var(--yellow)">${low}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Sold Out</span>
+          <span class="info-val" style="color:var(--red)">${soldout}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-key">Total Slot</span>
+          <span class="info-val">${d.total_slots}</span>
+        </div>
+      `;
+
+      // Simpan data & render dengan query aktif
+      allMembers = d.members;
+      renderMembers(document.getElementById("member-search").value);
+
+      document.getElementById("last-updated").textContent =
+        new Date().toLocaleTimeString("id-ID");
+
+    } catch (e) {
+      console.error("Fetch status error:", e);
+    }
+  }
+
+  // ── FETCH LOG ──
+  async function loadLog() {
+    try {
+      const res = await fetch("/api/log");
+      allLogs   = await res.json();
+      renderLog(document.getElementById("log-search").value);
+    } catch (e) {
+      console.error("Fetch log error:", e);
+    }
+  }
+
+  function refresh() { loadStatus(); loadLog(); }
+
+  refresh();
+  setInterval(refresh, 15000);
+</script>
+</body>
+</html>
